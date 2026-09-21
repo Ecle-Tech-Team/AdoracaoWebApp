@@ -1,0 +1,55 @@
+@import "tailwindcss";
+:root { --background:#ffffff; --foreground:#171717; }
+@theme {
+ --color-background:var(--background); --color-foreground:var(--foreground);
+ --color-cinza:#8CA0AC; --color-amarelo:#FFCB69; --color-input:#FFFAE8; --color-preto:#505050;
+ --color-amarelo-dark:#B8AB7D; --color-azul:#26516E; --color-input-azul:#F5FBFF;
+ --color-azul-dark:#5F8BA9; --color-vermelho:#FF4242; --color-verde:#459041;
+}
+body{background:var(--background);color:var(--foreground);font-family:Arial,Helvetica,sans-serif}
+.text1{font-family:var(--font-poppinsBold)} .text2{font-family:var(--font-nunito)} .text3{font-family:var(--font-poppinsSemiBold)}
+button,input{outline-offset:3px}
+
+.projection-fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+
+  background: #000;
+  color: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.projection-content {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 5vw;
+  text-align: center;
+}
+
+.projection-text {
+  white-space: pre-line;
+
+  font-family: "Nunito", sans-serif;
+  font-size: clamp(2rem, 4vw, 5rem);
+
+  line-height: 1.5;
+  font-weight: 700;
+
+  max-width: 90vw;
+  max-height: 85vh;
+
+  overflow-wrap: break-word;
+}

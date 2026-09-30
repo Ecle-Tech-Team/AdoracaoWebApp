@@ -11,7 +11,7 @@ import api, {
   setAccessToken,
 } from "@/app/api/api";
 
-type User = Record<string, unknown>;
+type User = Record<string, unknown> & { id_igreja?: number | null };
 type Status = "loading" | "authenticated" | "unauthenticated" | "unavailable" | "forbidden";
 
 type AuthContextValue = {

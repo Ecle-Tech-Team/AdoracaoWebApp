@@ -3,7 +3,8 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
-import api from "../../api/api";
+import axios from "axios";
+import { useAuth } from "@/app/components/auth/AuthProvider";
 import logo from "../../../public/logo.svg";
 import on from "../../../public/on.svg";
 import off from "../../../public/off.svg";
@@ -12,7 +13,10 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
+  const { signIn } = useAuth();
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -20,18 +24,20 @@ export default function Login() {
       toast.warn("Preencha os campos!", { position: "top-center", autoClose: 1500 });
       return;
     }
+    setSubmitting(true);
     try {
-      const response = await api.post("/login", { email, password });
-      const userData = response.data.user ?? response.data.usuario ?? {};
-      sessionStorage.setItem("nome", userData.nome ?? "");
-      sessionStorage.setItem("typeUser", userData.typeUser ?? userData.tipo_usuario ?? "");
-      sessionStorage.setItem("id_grupo", String(userData.id_grupo ?? ""));
-      sessionStorage.setItem("token", response.data.token);
-      sessionStorage.setItem("email", email);
+      await signIn(email, password, rememberMe);
       toast.success("Login realizado com sucesso!", { position: "top-center", autoClose: 900 });
       setTimeout(() => router.push("/pages/inicio"), 950);
-    } catch {
-      toast.error("Erro no login. Tente novamente.", { position: "top-center", autoClose: 1800 });
+    } catch (error) {
+      const message = axios.isAxiosError(error) && error.response?.status === 401
+        ? "Email ou senha inválidos."
+        : axios.isAxiosError(error) && !error.response
+          ? "Não foi possível conectar. Tente novamente."
+          : "Erro no login. Tente novamente.";
+      toast.error(message, { position: "top-center", autoClose: 1800 });
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -54,9 +60,9 @@ export default function Login() {
             </button>
           </div>
           <div className="mt-5 flex items-center justify-between">
-            <label className="flex items-center gap-2 text-cinza text2"><input className="w-5" type="checkbox" />Manter conectado</label>
+            <label className="flex items-center gap-2 text-cinza text2"><input className="w-5" type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} />Manter conectado</label>
           </div>
-          <button type="submit" className="w-full rounded-xl h-12 mt-7 bg-amarelo text-lg text2 text-white hover:opacity-90">Entrar</button>
+          <button type="submit" disabled={submitting} className="w-full rounded-xl h-12 mt-7 bg-amarelo text-lg text2 text-white hover:opacity-90 disabled:opacity-60">{submitting ? "Entrando..." : "Entrar"}</button>
           <button type="button" className="w-full text-lg text2 text-white mt-6">Esqueci a senha</button>
         </div>
       </form>

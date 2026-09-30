@@ -68,18 +68,6 @@ export default function HinarioTable({ type }: Props) {
   const theme = isGeneral ? styles.blue : styles.yellow;
 
   /* =========================
-     AUTENTICAÇÃO
-  ========================= */
-
-  useEffect(() => {
-    const token = sessionStorage.getItem("token");
-
-    if (!token) {
-      router.replace("/");
-    }
-  }, [router]);
-
-  /* =========================
      LER CONFIGURAÇÃO
   ========================= */
 

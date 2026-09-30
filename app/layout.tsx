@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito, Poppins } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "./components/auth/AuthProvider";
 
 const poppinsBold = Poppins({
   weight: "700",
@@ -33,7 +34,7 @@ export default function RootLayout({
       <body
         className={`${poppinsBold.variable} ${poppinsSemiBold.variable} ${nunito.variable}`}
       >
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

@@ -2,7 +2,8 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import api from "../../api/api";
+import { authApi } from "../../api/api";
+import axios from "axios";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
@@ -17,8 +18,8 @@ export default function Cadastro() {
   const [senha, setSenha] = useState<string>("");
   // const [confirmSenha, setConfirmSenha] = useState<string>("");
   const [birth, setBirth] = useState<string>("");
-  const [typeUser, setTypeUser] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const router = useRouter();
   async function handleRegister(event: React.FormEvent) {
@@ -53,8 +54,8 @@ export default function Cadastro() {
       });
     };
 
-    const notifyError = () => {
-      toast.error("Erro no cadastro, Tente novamente.", {
+    const notifyError = (message: string) => {
+      toast.error(message, {
         position: "top-center",
         autoClose: 1500,
         hideProgressBar: false,
@@ -71,21 +72,20 @@ export default function Cadastro() {
         nome === "" ||
         email === "" ||
         senha === "" ||
-        birth === "" ||
-        typeUser === ""
+        birth === ""
       ) {
         notifyWarn();
         return;
       } else {
         const data = {
-          nome,
+          name: nome,
           email,
-          senha,
-          birth,
-          typeUser,
+          password: senha,
+          birthDate: birth,
         };
 
-        api.post("/cadastro", data);
+        setSubmitting(true);
+        await authApi.post("/user", data);
 
         notifySuccess();
 
@@ -93,8 +93,15 @@ export default function Cadastro() {
           router.push("/pages/login", { scroll: false });
         }, 1500);
       }
-    } catch {
-      notifyError();
+    } catch (error) {
+      const responseMessage = axios.isAxiosError(error) && typeof error.response?.data?.message === "string"
+        ? error.response.data.message
+        : null;
+      notifyError(responseMessage ?? (axios.isAxiosError(error) && !error.response
+        ? "Não foi possível conectar. Tente novamente."
+        : "Erro no cadastro. Tente novamente."));
+    } finally {
+      setSubmitting(false);
     }
   }
   return (
@@ -176,32 +183,7 @@ export default function Cadastro() {
                   required
                 />
               </div>
-              <div className="flex flex-col">
-                <label className="text-cinza text1 text-md mt-2 mb-1">
-                  Tipo de Usuário
-                </label>
-
-                <select
-                  className="px-4 py-3.5 w-[40vh] mb-3 text2 rounded-xl text-cinza bg-input border-3 border-amarelo"
-                  value={typeUser}
-                  onChange={(e) => setTypeUser(e.target.value)}
-                  required
-                >
-                  <option disabled>Selecione um Tipo</option>
-                  <option value="Adorador">Adorador</option>
-                  <option value="Cantor">Cantor</option>
-                  <option value="Componente">Componente</option>
-                  <option value="Músico">Músico</option>
-                  <option value="Professor">Professor</option>
-                  <option value="Regente">Regente</option>
-                </select>
-              </div>
-
               <div className="mt-4 flex justify-center">
-                <input className="w-5" type="checkbox" name="" id="" />
-                <p className="text-cinza text-lg mt-1 text2 ml-2">
-                  Manter Conectado
-                </p>
                 <button
                   type="button"
                   className="ml-[16vh]"
@@ -218,10 +200,11 @@ export default function Cadastro() {
 
               <button
                 type="submit"
+                disabled={submitting}
                 className="rounded-xl h-12 mt-7 bg-amarelo text-lg text2 text-white active:bg-white active:text-amarelo cursor-pointer"
                 onClick={handleRegister}
               >
-                Entrar
+                {submitting ? "Cadastrando..." : "Cadastrar"}
               </button>
               <ToastContainer />
 

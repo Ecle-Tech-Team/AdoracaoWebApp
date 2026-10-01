@@ -6,7 +6,13 @@ import Link from "next/link";
 
 const cards = [
   {
-    title: "Hinário",
+    title: "Hinos da Igreja",
+    description: "Músicas cadastradas para uso da sua igreja.",
+    href: "/pages/hinos-igreja",
+    color: "bg-[#eef8ff]", titleColor: "text-[#285775]", descriptionColor: "text-[#7197b4]", image: "/images/hinos-gerais.jpg",
+  },
+  {
+    title: "Hinários",
     description: (
       <>
         Encontre todos os hinos do hinário

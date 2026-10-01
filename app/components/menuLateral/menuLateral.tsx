@@ -37,6 +37,7 @@ export default function MenuLateral() {
         <Link href="/pages/inicio">
           <Image src={inicio} width={45} height={30} alt="Início" />
         </Link>
+        <Link href="/pages/hinos-igreja" className="px-2 text-center text-xs text-[#285775]">Hinos da Igreja</Link>
       </nav>
 
       <div className="mt-auto flex flex-col items-center gap-5">

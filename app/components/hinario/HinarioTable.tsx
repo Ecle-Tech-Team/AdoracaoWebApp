@@ -103,10 +103,11 @@ export default function HinarioTable({ type }: Props) {
         const data = response.data;
 
         setHinos(Array.isArray(data) ? data : (data?.hinos ?? []));
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!cancelled) {
+          const failure = err as { response?: { data?: { message?: string } } };
           setError(
-            err.response?.data?.message ||
+            failure.response?.data?.message ||
               "Não foi possível carregar os hinos.",
           );
         }

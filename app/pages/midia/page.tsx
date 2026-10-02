@@ -4,8 +4,9 @@ import Link from "next/link";
 import MenuLateral from "../../components/menuLateral/menuLateral";
 
 const cards = [
+  { title: "Hinos da Igreja", description: "Músicas cadastradas para uso da sua igreja.", href: "/pages/hinos-igreja", tone: "blue", visual: "geral" },
   {
-    title: "Hinário",
+    title: "Hinários",
     description:
       "Encontre todos os hinos do hinário e adore a Deus com alegria!",
     href: "/pages/hinario",

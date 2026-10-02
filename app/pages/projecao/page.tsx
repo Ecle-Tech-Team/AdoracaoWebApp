@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import logo from "../../../public/logo.svg";
 import api from "@/app/api/api";
+import YouTubePlayer from "@/app/components/YouTubePlayer";
+import { parseLyricsToSlides } from "@/app/lib/churchSongs";
 
 type Slide = {
   label: string;
@@ -34,7 +36,7 @@ function normalizeText(value: unknown): string {
     .trim();
 }
 
-function getText(value: any): string {
+function getText(value: unknown): string {
   if (typeof value === "string") {
     return normalizeText(value);
   }
@@ -47,11 +49,12 @@ function getText(value: any): string {
   }
 
   if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
     const keys = ["texto", "text", "conteudo", "content", "letra", "lyrics"];
 
     for (const key of keys) {
-      if (value[key]) {
-        const text = getText(value[key]);
+      if (record[key]) {
+        const text = getText(record[key]);
 
         if (text) return text;
       }
@@ -61,7 +64,7 @@ function getText(value: any): string {
   return "";
 }
 
-function buildSlides(hino: any, tipo: string): Slide[] {
+function buildSlides(hino: Record<string, unknown>, tipo: string): Slide[] {
   const slides: Slide[] = [];
 
   const titulo = hino.titulo ?? hino.nome ?? hino.title ?? "Hino";
@@ -76,8 +79,7 @@ function buildSlides(hino: any, tipo: string): Slide[] {
   } else if (tipo === "hinario_ccb") {
     subtitle = "Hinário CCB";
   } else if (tipo === "geral") {
-    subtitle =
-      hino.autor ?? hino.author ?? hino.compositor ?? hino.autoria ?? "";
+    subtitle = getText(hino.autor ?? hino.author ?? hino.compositor ?? hino.autoria ?? "");
   }
 
   slides.push({
@@ -92,6 +94,10 @@ function buildSlides(hino: any, tipo: string): Slide[] {
     subtitle: getText(subtitle),
   });
 
+  if (tipo === "igreja") {
+    return [slides[0], ...parseLyricsToSlides(typeof hino.letra === "string" ? hino.letra : "").map((text, index) => ({ label: `Bloco ${index + 1}`, text }))];
+  }
+
   const versos = hino.versos ?? hino.verses ?? hino.estrofes ?? [];
 
   const coro = hino.coro ?? hino.coros ?? hino.refrao ?? hino["refrão"];
@@ -99,7 +105,7 @@ function buildSlides(hino: any, tipo: string): Slide[] {
   const chorus = getText(coro);
 
   if (Array.isArray(versos)) {
-    versos.forEach((verso: any, index: number) => {
+    versos.forEach((verso: unknown, index: number) => {
       const text = getText(verso);
 
       if (!text) return;
@@ -158,8 +164,10 @@ export default function ProjecaoPage() {
 
   const id = params.get("id");
   const tipo = params.get("tipo") ?? "harpa_crista";
+  const mode = params.get("modo") ?? "letra";
 
   const [slides, setSlides] = useState<Slide[]>([]);
+  const [videoId, setVideoId] = useState<string | null>(null);
   const [current, setCurrent] = useState(0);
 
   const [loading, setLoading] = useState(true);
@@ -226,7 +234,7 @@ export default function ProjecaoPage() {
         setLoading(true);
         setError("");
 
-        const endpoint =
+        const endpoint = tipo === "igreja" ? `/hinos-igreja/${id}` :
           tipo === "geral" ? `/hinario/${id}` : `/hinos/${tipo}/id/${id}`;
 
         console.log("Buscando hino em:", endpoint);
@@ -236,6 +244,12 @@ export default function ProjecaoPage() {
         if (cancelled) return;
 
         const data = response.data;
+        if (tipo === "igreja" && mode === "youtube") {
+          if (!data.youtube?.videoId) { setError("Vídeo não cadastrado."); return; }
+          setVideoId(data.youtube.videoId);
+          return;
+        }
+        if (tipo === "igreja" && !data.letra) { setError("Letra indisponível."); return; }
         const generatedSlides = buildSlides(data, tipo);
 
         if (generatedSlides.length === 0) {
@@ -245,14 +259,13 @@ export default function ProjecaoPage() {
 
         setSlides(generatedSlides);
         setCurrent(0);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (cancelled) return;
 
         console.error("Erro ao carregar hino:", err);
 
-        setError(
-          err.response?.data?.message ?? "Não foi possível carregar o hino.",
-        );
+        const failure = err as { response?: { data?: { message?: string } } };
+        setError(failure.response?.data?.message ?? "Não foi possível carregar o hino.");
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -265,7 +278,7 @@ export default function ProjecaoPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, tipo]);
+  }, [id, tipo, mode]);
 
   /*
    * Controles do teclado
@@ -314,7 +327,6 @@ export default function ProjecaoPage() {
    * Esse Hook fica antes dos returns condicionais.
    */
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
 
     function adjustTextSize() {
       const textElement = document.getElementById("projection-text");
@@ -341,7 +353,7 @@ export default function ProjecaoPage() {
       setTextScale(Number(scale.toFixed(2)));
     }
 
-    timeout = setTimeout(adjustTextSize, 100);
+    const timeout = setTimeout(adjustTextSize, 100);
 
     window.addEventListener("resize", adjustTextSize);
 
@@ -399,6 +411,10 @@ export default function ProjecaoPage() {
         </button>
       </main>
     );
+  }
+
+  if (tipo === "igreja" && mode === "youtube" && videoId) {
+    return <main className="fixed inset-0 flex h-screen w-screen items-center justify-center bg-black"><div className="w-full max-w-[min(100vw,177.78vh)]"><YouTubePlayer videoId={videoId} /></div><button type="button" onClick={() => { if (!document.fullscreenElement) void document.documentElement.requestFullscreen(); else void document.exitFullscreen(); }} className="fixed left-4 top-4 rounded bg-black/70 px-3 py-2 text-white">Tela cheia</button><button type="button" onClick={() => router.back()} className="fixed right-4 top-4 rounded bg-black/70 px-3 py-2 text-white">Sair</button></main>;
   }
 
   /*
